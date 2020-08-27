@@ -1,3 +1,4 @@
+# This code gets data from Yahoo Finance web page and stores it in PostgreSQL database
 import requests
 from bs4 import BeautifulSoup
 import psycopg2 as pg2
@@ -9,9 +10,10 @@ subject = 'TSLA'
 
 # 'db_name' variable requires for your PostgreSQL database name (case sensitive)
 db_name = 'financedata'
-db_user = str(input('Enter your PostgreSQL database\nusername: '))
+db_user = str(input('Enter your PostgreSQL database\n\nusername: '))
 db_password = str(input('password: '))
 
+# converts ticker's name into PostgreSQL naming format
 sql_subject = subject.lower()
 sql_subject_change = ['-', '=']
 for symbol in sql_subject_change:
@@ -106,6 +108,7 @@ def pg2_oneliner(_):
 
 
 def ws_deco(ws_str, ws_str2):
+    # improves result readability in console screen
     num = 18
     num2 = 6
     ws_minus = ''
@@ -154,9 +157,7 @@ else:
     conn.close()
 
 log_id = 0
-full_screen_counter = 0
 
-volume, price, mcap = data_tracker()
 price_difference = ''
 volume_difference = ''
 
@@ -165,12 +166,13 @@ print(f'\n{cur.fetchone()}\n')
 pg2_cc(conn, cur)
 
 while True:
+    # main loop
     try:
         volume, price, mcap = data_tracker()
-    except AttributeError:
+    except (AttributeError, requests.exceptions.ChunkedEncodingError) as e:
         time.sleep(15)
         continue
-    except ConnectionError:
+    except requests.exceptions.ConnectionError:
         time.sleep(30)
         continue
     if price_difference != price or volume_difference != volume:
@@ -178,7 +180,6 @@ while True:
         if price != 'Full screen':
             price = int_data(price)
         else:
-            full_screen_counter += 1
             continue
         price_perc = 0.0
 
@@ -213,7 +214,5 @@ while True:
               f'{ws_deco(str(price), str(price_perc))} %\n'
               f'{ws_deco(str(volume_difference), str(volume_perc))} %\n'
               f'{ws_deco(str(mcap), str(mcap_perc)) + "%" if mcap > 0 else ""}\n')
-        if full_screen_counter > 0:
-            print(f"'Full screen' occurred {full_screen_counter} time{'s' if full_screen_counter > 1 else ''}")
 
     time.sleep(15)
