@@ -1,6 +1,6 @@
 # This code gets data from Yahoo Finance web page and stores it in PostgreSQL database
 import requests
-from bs4 import BeautifulSoup
+import yfinance as yf
 import psycopg2 as pg2
 from datetime import date
 import time
@@ -24,21 +24,11 @@ for symbol in sql_subject_change:
 
 
 def data_tracker():
-    ats = requests.get(f'https://finance.yahoo.com/quote/{subject}?p={subject}')
-    bs_obj = BeautifulSoup(ats.text, 'html.parser')
-    try:
-        dt_volume = bs_obj.find('td', {'data-test': 'TD_VOLUME-value'}).text
-    except AttributeError:
-        dt_volume = 0
-    try:
-        dt_mcap = bs_obj.find('td', {'data-test': 'MARKET_CAP-value'}).text
-    except AttributeError:
-        dt_mcap = 0
-    try:
-        dt_price = bs_obj.find('span', {'data-reactid': "14"}).text
-    except AttributeError:
-        dt_price = bs_obj.find('span', {'data-reactid': "32"}).text
-    return dt_volume, dt_price, dt_mcap
+    ticker_data = yf.Ticker(subject).info
+    ticker_price = ticker_data['regularMarketPrice']
+    ticker_volume = ticker_data['regularMarketVolume']
+    ticker_market_cap = ticker_data['marketCap']
+    return ticker_volume, ticker_price, ticker_market_cap
 
 
 def check_none(none_data):
@@ -186,8 +176,6 @@ while True:
         volume_difference = volume
         volume = int_data(volume)
         volume_perc = 0.0
-
-        mcap = int_mcap(mcap)
         mcap_perc = 0.0
 
         conn, cur = pg2_oneliner(f"SELECT COUNT(log_id) FROM {sql_subject}")
