@@ -130,6 +130,8 @@ while True:
     # main loop
     try:
         volume, price, mcap = data_tracker()
+        if not mcap:
+            mcap = 0
     except requests.exceptions.ConnectionError:
         conn_error_counter += 1
         conn_error_time = str(time.strftime('%H:%M:%S'))
