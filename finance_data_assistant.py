@@ -17,12 +17,8 @@ db_password = str(input('password: '))
 
 # converts ticker's name into PostgreSQL naming format
 sql_subject = subject.lower()
-sql_subject_change = ['-', '=']
-for symbol in sql_subject_change:
-    if symbol in sql_subject:
-        subject_split = [_ for _ in sql_subject]
-        subject_split[subject_split.index(symbol)] = '_'
-        sql_subject = ''.join(subject_split)
+for symbol in ["-", "="]:
+    sql_subject = sql_subject.replace(symbol, "_")
 
 
 def data_tracker():
