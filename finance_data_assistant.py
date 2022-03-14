@@ -11,9 +11,9 @@ import time
 subject = 'TSLA'
 
 # 'db_name' variable requires for your PostgreSQL database name (case sensitive)
-db_name = 'financedata'
-db_user = str(input('Enter your PostgreSQL database\n\nusername: '))
-db_password = str(input('password: '))
+db_name = "financedata"
+db_user = input("Enter your PostgreSQL database\nusername: ")
+db_password = input("password: ")
 
 # converts ticker's name into PostgreSQL naming format
 sql_subject = subject.lower()
