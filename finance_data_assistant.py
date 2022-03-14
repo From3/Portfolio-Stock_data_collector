@@ -1,4 +1,6 @@
-# This code gets data from Yahoo Finance web page and stores it in PostgreSQL database
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*- #
+
 import requests
 import yfinance as yf
 import psycopg2 as pg2
@@ -38,31 +40,6 @@ def check_none(none_data):
         return none_data
 
 
-def int_data(str_num):
-    str_num = str(str_num)
-    str_num_list = list(str_num)
-    commas = str_num_list.count(',')
-    for comma in range(commas):
-        str_num_list.remove(',')
-    try:
-        return int(''.join(str_num_list))
-    except ValueError:
-        return float(''.join(str_num_list))
-
-
-def int_mcap(str_mc):
-    conv_num = 0
-    conv_dict = {'M': 6, 'B': 9, 'T': 12}
-    conv = str(str_mc)[-1]
-    if conv == '0':
-        return 0
-    if conv in conv_dict:
-        conv_num = 10**conv_dict.get(conv)
-    list_mcap = [_ for _ in str_mc]
-    list_mcap.remove(conv)
-    return int(float(''.join(list_mcap)) * conv_num)
-
-
 def perc_func(present, early):
     try:
         return round(float(present) / early * 100 - 100, 3)
@@ -86,7 +63,7 @@ def pg2_insert(in_price, in_price_perc, in_volume, in_volume_perc, in_mcap, in_m
     insert_conn, insert_cur = pg2_connect()
     insert_cur.execute(f"INSERT INTO {sql_subject}(price, price_perc, volume, volume_perc, mcap, mcap_perc, log_time)"
                        f"VALUES"
-                       f"({int_data(in_price)}, {in_price_perc}, {in_volume}, {in_volume_perc}, "
+                       f"({in_price}, {in_price_perc}, {in_volume}, {in_volume_perc}, "
                        f"{in_mcap}, {in_mcap_perc}, NOW())")
     pg2_cc(insert_conn, insert_cur)
 
@@ -97,22 +74,16 @@ def pg2_oneliner(_):
     return one_conn, one_cur
 
 
-def ws_deco(ws_str, ws_str2):
-    # improves result readability in console screen
-    num = 18
-    num2 = 6
-    ws_minus = ''
-    ws_list, ws_list2 = [_ for _ in ws_str], [_ for _ in ws_str2]
-    if ws_list2[0] == '-':
-        num -= 1
-        ws_minus = ' '
-    res = ''
-    ws_list.append(' ' * (num - int(len(ws_list))))
-    ws_list += ws_list2
-    ws_list.append((' ' * (num2 - int(len(ws_list2)))) + ws_minus)
-    for _ in ws_list:
-        res += _
-    return res
+def format_output(first_str, second_str):
+    first_str, second_str = str(first_str), str(second_str)
+    first_whitespaces = 27
+    second_whitespaces = 6
+    if second_str[0] == "-":
+        first_whitespaces -= 1
+        second_str += " "
+    first_str += " " * (first_whitespaces - len(first_str))
+    second_str += " " * (second_whitespaces - len(second_str))
+    return first_str + second_str
 
 
 conn, cur = pg2_connect()
@@ -159,22 +130,20 @@ while True:
     # main loop
     try:
         volume, price, mcap = data_tracker()
-    except (AttributeError, requests.exceptions.ChunkedEncodingError) as e:
-        time.sleep(15)
-        continue
+        if not mcap:
+            mcap = 0
     except requests.exceptions.ConnectionError:
+        conn_error_counter += 1
+        conn_error_time = str(time.strftime('%H:%M:%S'))
+        print(f"\n{format_output(date.today(), conn_error_time)}\n"
+              f"Connection error ({conn_error_counter} time{'s' if conn_error_counter > 1 else ''} this session)")
         time.sleep(30)
         continue
     if price_difference != price or volume_difference != volume:
         price_difference = price
-        if price != 'Full screen':
-            price = int_data(price)
-        else:
-            continue
         price_perc = 0.0
 
         volume_difference = volume
-        volume = int_data(volume)
         volume_perc = 0.0
         mcap_perc = 0.0
 
@@ -198,9 +167,9 @@ while True:
         else:
             pg2_insert(price, 0.0, volume, 0.0, mcap, 0.0)
 
-        print(f'{ws_deco(str(date.today()), str(time.strftime("%H:%M:%S")))}\n'
-              f'{ws_deco(str(price), str(price_perc))} %\n'
-              f'{ws_deco(str(volume_difference), str(volume_perc))} %\n'
-              f'{ws_deco(str(mcap), str(mcap_perc)) + "%" if mcap > 0 else ""}\n')
+        print(f'{format_output(date.today(), time.strftime("%H:%M:%S"))}\n'
+              f'{format_output(price, price_perc)} %\n'
+              f'{format_output(volume_difference, volume_perc)} %\n'
+              f'{format_output(mcap, mcap_perc) + "%" if mcap > 0 else ""}\n')
 
     time.sleep(15)
