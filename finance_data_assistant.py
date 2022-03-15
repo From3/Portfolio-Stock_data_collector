@@ -144,8 +144,7 @@ while True:
         mcap_perc = 0.0
 
         conn, cur = pg2_oneliner(f"SELECT COUNT(log_id) FROM {sql_subject}")
-        for _ in cur:
-            log_id = _[0]
+        log_id = list(cur)[0][0]
         pg2_cc(conn, cur)
 
         if log_id > 0:
