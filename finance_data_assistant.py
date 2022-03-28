@@ -36,7 +36,7 @@ def check_none(none_data):
         return none_data
 
 
-def difference_func(present, early):
+def percentage_func(present, early):
     try:
         return round(float(present) / early * 100 - 100, 3)
     except ZeroDivisionError:
@@ -55,12 +55,12 @@ def pg2_cc(cc_conn, cc_cur):
     cc_conn.close()
 
 
-def pg2_insert(in_price, in_price_difference, in_volume, in_volume_difference, in_market_cap, in_market_cap_difference):
+def pg2_insert(in_price, in_price_percentage, in_volume, in_volume_percentage, in_market_cap, in_market_cap_percentage):
     insert_conn, insert_cur = pg2_connect()
-    insert_cur.execute(f"INSERT INTO {sql_subject}(price, price_difference, volume, volume_difference, market_cap, market_cap_difference, log_time)"
+    insert_cur.execute(f"INSERT INTO {sql_subject}(price, price_percentage, volume, volume_percentage, market_cap, market_cap_percentage, log_time)"
                        f"VALUES"
-                       f"({in_price}, {in_price_difference}, {in_volume}, {in_volume_difference}, "
-                       f"{in_market_cap}, {in_market_cap_difference}, NOW())")
+                       f"({in_price}, {in_price_percentage}, {in_volume}, {in_volume_percentage}, "
+                       f"{in_market_cap}, {in_market_cap_percentage}, NOW())")
     pg2_cc(insert_conn, insert_cur)
 
 
@@ -100,11 +100,11 @@ if need_new:
     conn, cur = pg2_connect()
     cur.execute(f"CREATE TABLE {sql_subject}(log_id SERIAL PRIMARY KEY, "
                 f"price NUMERIC NOT NULL,"
-                f"price_difference NUMERIC,"
+                f"price_percentage NUMERIC,"
                 f"volume NUMERIC,"
-                f"volume_difference NUMERIC,"
+                f"volume_percentage NUMERIC,"
                 f"market_cap NUMERIC,"
-                f"market_cap_difference NUMERIC,"
+                f"market_cap_percentage NUMERIC,"
                 f"log_time TIMESTAMP UNIQUE)")
     pg2_cc(conn, cur)
     print('Created new')
@@ -139,11 +139,11 @@ while True:
         continue
     if price_difference != price or volume_difference != volume:
         price_difference = price
-        price_difference = 0.0
+        price_percentage = 0.0
 
         volume_difference = volume
-        volume_difference = 0.0
-        market_cap_difference = 0.0
+        volume_percentage = 0.0
+        market_cap_percentage = 0.0
 
         conn, cur = pg2_oneliner(f"SELECT COUNT(log_id) FROM {sql_subject}")
         log_id = list(cur)[0][0]
@@ -157,16 +157,16 @@ while True:
             pg2_cc(conn, cur)
 
             if early_price != float(price) or early_volume != float(volume):
-                price_difference = difference_func(price, early_price)
-                volume_difference = difference_func(volume, early_volume)
-                market_cap_difference = difference_func(market_cap, early_market_cap)
-                pg2_insert(price, price_difference, volume, volume_difference, market_cap, market_cap_difference)
+                price_percentage = percentage_func(price, early_price)
+                volume_percentage = percentage_func(volume, early_volume)
+                market_cap_percentage = percentage_func(market_cap, early_market_cap)
+                pg2_insert(price, price_percentage, volume, volume_percentage, market_cap, market_cap_percentage)
         else:
             pg2_insert(price, 0.0, volume, 0.0, market_cap, 0.0)
 
         print(f'{format_output(date.today(), time.strftime("%H:%M:%S"))}\n'
-              f'{format_output(price, price_difference)} %\n'
-              f'{format_output(volume_difference, volume_difference)} %\n'
-              f'{format_output(market_cap, market_cap_difference) + "%" if market_cap > 0 else ""}\n')
+              f'{format_output(price, price_percentage)} %\n'
+              f'{format_output(volume_difference, volume_percentage)} %\n'
+              f'{format_output(market_cap, market_cap_percentage) + "%" if market_cap > 0 else ""}\n')
 
     time.sleep(15)
