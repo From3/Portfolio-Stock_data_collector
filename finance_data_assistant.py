@@ -26,7 +26,7 @@ def data_tracker():
     ticker_price = ticker_data['regularMarketPrice']
     ticker_volume = ticker_data['regularMarketVolume']
     ticker_market_cap = ticker_data['marketCap']
-    return ticker_volume, ticker_price, ticker_market_cap
+    return ticker_price, ticker_volume, ticker_market_cap
 
 
 def check_none(none_data):
@@ -36,7 +36,7 @@ def check_none(none_data):
         return none_data
 
 
-def perc_func(present, early):
+def difference_func(present, early):
     try:
         return round(float(present) / early * 100 - 100, 3)
     except ZeroDivisionError:
@@ -55,12 +55,12 @@ def pg2_cc(cc_conn, cc_cur):
     cc_conn.close()
 
 
-def pg2_insert(in_price, in_price_perc, in_volume, in_volume_perc, in_mcap, in_mcap_perc):
+def pg2_insert(in_price, in_price_difference, in_volume, in_volume_difference, in_market_cap, in_market_cap_difference):
     insert_conn, insert_cur = pg2_connect()
-    insert_cur.execute(f"INSERT INTO {sql_subject}(price, price_perc, volume, volume_perc, mcap, mcap_perc, log_time)"
+    insert_cur.execute(f"INSERT INTO {sql_subject}(price, price_difference, volume, volume_difference, market_cap, market_cap_difference, log_time)"
                        f"VALUES"
-                       f"({in_price}, {in_price_perc}, {in_volume}, {in_volume_perc}, "
-                       f"{in_mcap}, {in_mcap_perc}, NOW())")
+                       f"({in_price}, {in_price_difference}, {in_volume}, {in_volume_difference}, "
+                       f"{in_market_cap}, {in_market_cap_difference}, NOW())")
     pg2_cc(insert_conn, insert_cur)
 
 
@@ -100,11 +100,11 @@ if need_new:
     conn, cur = pg2_connect()
     cur.execute(f"CREATE TABLE {sql_subject}(log_id SERIAL PRIMARY KEY, "
                 f"price NUMERIC NOT NULL,"
-                f"price_perc NUMERIC,"
+                f"price_difference NUMERIC,"
                 f"volume NUMERIC,"
-                f"volume_perc NUMERIC,"
-                f"mcap NUMERIC,"
-                f"mcap_perc NUMERIC,"
+                f"volume_difference NUMERIC,"
+                f"market_cap NUMERIC,"
+                f"market_cap_difference NUMERIC,"
                 f"log_time TIMESTAMP UNIQUE)")
     pg2_cc(conn, cur)
     print('Created new')
@@ -122,12 +122,14 @@ conn, cur = pg2_oneliner(f"SELECT * FROM {sql_subject} ORDER BY log_id DESC")
 print(f'\n{cur.fetchone()}\n')
 pg2_cc(conn, cur)
 
+conn_error_counter = 0
+
 while True:
     # main loop
     try:
-        volume, price, mcap = data_tracker()
-        if not mcap:
-            mcap = 0
+        price, volume, market_cap = data_tracker()
+        if not market_cap:
+            market_cap = 0
     except requests.exceptions.ConnectionError:
         conn_error_counter += 1
         conn_error_time = str(time.strftime('%H:%M:%S'))
@@ -137,11 +139,11 @@ while True:
         continue
     if price_difference != price or volume_difference != volume:
         price_difference = price
-        price_perc = 0.0
+        price_difference = 0.0
 
         volume_difference = volume
-        volume_perc = 0.0
-        mcap_perc = 0.0
+        volume_difference = 0.0
+        market_cap_difference = 0.0
 
         conn, cur = pg2_oneliner(f"SELECT COUNT(log_id) FROM {sql_subject}")
         log_id = list(cur)[0][0]
@@ -150,21 +152,21 @@ while True:
         if log_id > 0:
             conn, cur = pg2_oneliner(f"SELECT * FROM {sql_subject} ORDER BY log_id DESC")
             early_row = cur.fetchone()
-            early_price, early_volume, early_mcap = \
+            early_price, early_volume, early_market_cap = \
                 float(early_row[1]), float(check_none(early_row[3])), float(check_none(early_row[5]))
             pg2_cc(conn, cur)
 
             if early_price != float(price) or early_volume != float(volume):
-                price_perc = perc_func(price, early_price)
-                volume_perc = perc_func(volume, early_volume)
-                mcap_perc = perc_func(mcap, early_mcap)
-                pg2_insert(price, price_perc, volume, volume_perc, mcap, mcap_perc)
+                price_difference = difference_func(price, early_price)
+                volume_difference = difference_func(volume, early_volume)
+                market_cap_difference = difference_func(market_cap, early_market_cap)
+                pg2_insert(price, price_difference, volume, volume_difference, market_cap, market_cap_difference)
         else:
-            pg2_insert(price, 0.0, volume, 0.0, mcap, 0.0)
+            pg2_insert(price, 0.0, volume, 0.0, market_cap, 0.0)
 
         print(f'{format_output(date.today(), time.strftime("%H:%M:%S"))}\n'
-              f'{format_output(price, price_perc)} %\n'
-              f'{format_output(volume_difference, volume_perc)} %\n'
-              f'{format_output(mcap, mcap_perc) + "%" if mcap > 0 else ""}\n')
+              f'{format_output(price, price_difference)} %\n'
+              f'{format_output(volume_difference, volume_difference)} %\n'
+              f'{format_output(market_cap, market_cap_difference) + "%" if market_cap > 0 else ""}\n')
 
     time.sleep(15)
