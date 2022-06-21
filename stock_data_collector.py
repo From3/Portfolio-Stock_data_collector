@@ -12,7 +12,6 @@ import time
 import logging
 
 # connection to the database with script call arguments, env or input
-print(argv)
 argv_length = len(argv)
 if argv_length > 4:
     DATABASE_NAME = argv[1]
