@@ -4,11 +4,15 @@
 
 **Stock data collector** is a Python 3 project used for checking stock data (price, trading volume, and market cap) using [yfinance](https://github.com/ranaroussi/yfinance) package and storing collected data to PostgreSQL database using [psycopg2](https://github.com/psycopg/psycopg2) - Python-PostgreSQL Database Adapter.
 
-It creates tables for stocks which weren't previously recorded in a database, runs it's main search every 15 seconds, and stores data (price, trading volume, market cap, and percentage of data difference) to database in case any data (price, trading volume, and market cap) have changed in that time.
+It creates tables for stocks that weren't previously recorded in a database, runs its main search every 15 seconds, and stores data (price, trading volume, market cap, and percentage of data difference) in the database in case of any data (price, trading volume, and market cap) have changed over time.
 
 ## Installation
 
-Install dependencies using `pip` from application's directory:
+* Setup PostgreSQL if it's not yet setup
+
+[PostgreSQL download page](https://www.postgresql.org/download/)
+
+* Install dependencies using `pip` from application's directory:
 
 ```
 pip install -r requirements.txt
@@ -19,3 +23,33 @@ or in case multiple Python versions are installed:
 ```
 pip3 install -r requirements.txt
 ```
+
+## Usage
+
+To use the stock data collector, you can run it from IDE or shell.
+Database credentials can be provided in script arguments, env variables, or inputs given when running the script.
+
+---
+
+To run the script use without any additional arguments:
+```
+python stock_data_collector.py
+```
+
+or in case multiple Python versions are installed:
+```
+python3 stock_data_collector.py
+```
+---
+
+To run the script with all additional arguments use:
+```
+python3 stock_data_collector.py "{database name}" "{database username}" "{database password}" "{ticker name}"
+```
+
+or in case multiple Python versions are installed:
+```
+python3 stock_data_collector.py "{database name}" "{database username}" "{database password}" "{ticker name}"
+```
+
+In case only one additional argument is provided, it will be used as a ticker name.
