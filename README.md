@@ -26,9 +26,11 @@ pip3 install -r requirements.txt
 
 ## Usage
 
-To use the stock data collector, you can run it from IDE or shell.
+To use the stock data collector, you can run it from an IDE or a shell.
+
 Database credentials can be provided in script arguments, env variables, or inputs given when running the script.
-Arguments have a higher priority than env variables in case both are provided.
+
+***Arguments have a higher priority than env variables in case both are provided.***
 
 ---
 
