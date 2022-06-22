@@ -11,7 +11,7 @@ from database import DataBase
 import time
 import logging
 
-# connection to the database with script call arguments, env or input
+# connection to the database with script call arguments, env variables or input
 argv_length = len(argv)
 if argv_length > 4:
     DATABASE_NAME = argv[1]
@@ -20,7 +20,7 @@ if argv_length > 4:
     TICKER_NAME = argv[4]
 else:
     DATABASE_NAME = environ.get("COLLECTOR_DATABASE_NAME", input("Enter the database name: "))
-    DATABASE_USERNAME = environ.get("COLLECTOR_DATABASE_NAME", input("Enter the database username: "))
+    DATABASE_USERNAME = environ.get("COLLECTOR_DATABASE_USERNAME", input("Enter the database username: "))
     DATABASE_PASSWORD = environ.get("COLLECTOR_DATABASE_PASSWORD", getpass("Enter the database password: "))
     if argv_length == 2:
         TICKER_NAME = argv[1]
