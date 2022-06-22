@@ -28,6 +28,7 @@ pip3 install -r requirements.txt
 
 To use the stock data collector, you can run it from IDE or shell.
 Database credentials can be provided in script arguments, env variables, or inputs given when running the script.
+Arguments have a higher priority than env variables in case both are provided.
 
 ---
 
@@ -52,4 +53,13 @@ or in case multiple Python versions are installed:
 python3 stock_data_collector.py "{database name}" "{database username}" "{database password}" "{ticker name}"
 ```
 
-In case only one additional argument is provided, it will be used as a ticker name.
+***In case only one additional argument is provided, it will be used as a ticker name.***
+
+---
+
+Possible env variables:
+
+* `COLLECTOR_DATABASE_NAME` - name of the database
+* `COLLECTOR_DATABASE_USERNAME` - database username
+* `COLLECTOR_DATABASE_PASSWORD` - database password
+* `COLLECTOR_TICKER_NAME` - name of the stock ticker
